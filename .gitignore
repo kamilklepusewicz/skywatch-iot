@@ -1,0 +1,49 @@
+# Secrets and local settings
+.env
+.env.*
+!.env.example
+infrastructure/mosquitto/passwords
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# React/TypeScript
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local runtime state
+*.db
+*.sqlite
+*.sqlite3
+*.log
+logs/
+outputs/
+runs/
+
+# Large videos and models
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.pt
+*.onnx
+*.engine

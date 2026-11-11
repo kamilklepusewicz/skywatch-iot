@@ -1,0 +1,14 @@
+services:
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: skywatch-mqtt
+    restart: unless-stopped
+    ports:
+      - "1883:1883" # Trusted LAN only; do not expose to the internet.
+    volumes:
+      - ./infrastructure/mosquitto:/mosquitto/config:ro
+      - mqtt-data:/mosquitto/data
+    command: mosquitto -c /mosquitto/config/mosquitto.conf
+
+volumes:
+  mqtt-data:
