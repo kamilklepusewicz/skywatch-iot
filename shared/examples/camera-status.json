@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "camera_id": "camera_1",
+  "reported_at": "2026-11-11T14:30:01Z",
+  "online": true,
+  "mode": "replay",
+  "scenario_id": "flight_001"
+}

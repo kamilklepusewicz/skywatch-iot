@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "command_id": "cmd_001",
+  "camera_id": "camera_1",
+  "issued_at": "2026-11-11T14:30:01Z",
+  "command": "start_replay",
+  "scenario_id": "flight_001"
+}
