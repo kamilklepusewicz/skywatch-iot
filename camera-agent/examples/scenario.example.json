@@ -1,0 +1,15 @@
+{
+  "scenario_id": "flight_001",
+  "synthetic": false,
+  "description": "TEMPLATE: replace paths and example timestamps with original recording metadata.",
+  "cameras": {
+    "camera_1": {
+      "video": "../media/camera_1.mp4",
+      "captured_start": "2026-11-11T14:30:00.000Z"
+    },
+    "camera_2": {
+      "video": "../media/camera_2.mp4",
+      "captured_start": "2026-11-11T14:30:00.200Z"
+    }
+  }
+}

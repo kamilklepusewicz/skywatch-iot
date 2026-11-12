@@ -1,0 +1,24 @@
+camera_id = "camera_2"
+live_device = 0
+scenario_files = ["scenario.example.json"]
+heartbeat_seconds = 10
+observation_interval = 0.5
+replay_speed = 1.0
+command_max_age = 120
+
+[mqtt]
+host = "127.0.0.1" # Set MQTT_HOST to the broker's LAN address.
+port = 1883
+username = "skywatch"
+
+[detector]
+kind = "yolo"
+model = "../models/yolo11n.onnx"
+confidence = 0.35
+image_size = 640
+nms_iou = 0.45
+
+[tracker]
+max_distance = 0.08
+max_missed = 8
+min_hits = 3

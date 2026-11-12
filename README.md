@@ -4,7 +4,7 @@
 
 SkyWatch IoT to rozproszony prototyp obserwacji nieba: dwa fizyczne urządzenia z kamerami wykrywają obiekty (LIVE lub REPLAY), przekazują zdarzenia przez MQTT, a backend z dashboardem prezentują obserwacje oraz kandydatów na loty z danych ADS-B.
 
-> **Status:** początkowy szkielet repozytorium i kontrakty. Moduły aplikacyjne nie zostały jeszcze zaimplementowane. Przykłady są danymi demonstracyjnymi.
+> **Status:** [camera-agent (osoba 1)](camera-agent/README.md) ma implementację LIVE/REPLAY, detekcji, trackingu i MQTT oraz testy techniczne. Walidacja na rzeczywistych nagraniach i dwóch laptopach pozostaje do wykonania. Backend i frontend są nadal szkieletem. Przykłady i generowane filmy są danymi demonstracyjnymi.
 
 ## MVP
 1. Jeden konfigurowalny `camera-agent` uruchamiany na **dwóch laptopach** (różne `camera_id`).

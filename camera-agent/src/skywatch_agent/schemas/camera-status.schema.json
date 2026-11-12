@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SkyWatch camera status v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "camera_id",
+    "reported_at",
+    "online",
+    "mode"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "camera_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "minLength": 1
+    },
+    "reported_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "online": {
+      "type": "boolean"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "idle",
+        "live",
+        "replay"
+      ]
+    },
+    "scenario_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}
