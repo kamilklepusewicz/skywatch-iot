@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SkyWatch command v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "command_id",
+    "camera_id",
+    "issued_at",
+    "command"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "command_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "camera_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "minLength": 1
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "command": {
+      "type": "string",
+      "enum": [
+        "start_live",
+        "start_replay",
+        "stop"
+      ]
+    },
+    "scenario_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}
