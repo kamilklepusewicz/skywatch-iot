@@ -1,0 +1,43 @@
+{
+  "scenario_id": "synthetic_pair",
+  "synthetic": true,
+  "description": "Syntetyczne dane do testu integracji. Pozycje nie pochodzą z rzeczywistych lotów.",
+  "cameras": {
+    "camera_1": { "latitude": 52.0, "longitude": 21.0 },
+    "camera_2": { "latitude": 52.0, "longitude": 21.4 }
+  },
+  "origin": { "latitude": 52.0, "longitude": 21.2 },
+  "snapshots": [
+    {
+      "retrieved_at": "2026-01-02T12:00:05Z",
+      "response": {
+        "now": 1767355204000,
+        "ac": [
+          {
+            "hex": "~000001", "flight": "SYNTH01", "t": "C172",
+            "lat": 52.02, "lon": 21.02, "alt_baro": 2400, "alt_geom": 2580,
+            "gs": 95, "track": 270, "seen_pos": 4
+          },
+          {
+            "hex": "~000002", "flight": "SYNTH02", "t": "C172",
+            "lat": 52.02, "lon": 21.42, "alt_baro": 2200, "alt_geom": 2380,
+            "gs": 100, "track": 90, "seen_pos": 3
+          }
+        ]
+      }
+    },
+    {
+      "retrieved_at": "2026-01-02T12:01:05Z",
+      "response": {
+        "now": 1767355264000,
+        "ac": [
+          {
+            "hex": "~000001", "flight": "SYNTH01", "t": "C172",
+            "lat": 52.025, "lon": 21.04, "alt_baro": 2500, "alt_geom": 2680,
+            "gs": 96, "track": 270, "seen_pos": 2
+          }
+        ]
+      }
+    }
+  ]
+}
