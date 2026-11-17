@@ -10,5 +10,43 @@ services:
       - mqtt-data:/mosquitto/data
     command: mosquitto -c /mosquitto/config/mosquitto.conf
 
+  backend:
+    build:
+      context: ./backend
+      additional_contexts:
+        contracts: ./shared/contracts
+    restart: unless-stopped
+    depends_on: [mqtt]
+    env_file:
+      - path: .env.docker
+        required: false
+    environment:
+      MQTT_HOST: mqtt
+      MQTT_PORT: "1883"
+    volumes:
+      - backend-data:/data
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          from urllib.request import urlopen;
+          urlopen("http://127.0.0.1:8000/api/health", timeout=2).close()
+      interval: 15s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:5173:80"
+
 volumes:
   mqtt-data:
+  backend-data:
