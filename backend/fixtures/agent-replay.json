@@ -1,0 +1,11 @@
+{
+  "scenario_id": "synthetic-motion",
+  "synthetic": true,
+  "description": "Nagrania ruchu wygenerowane przez Camera Agent. Scenariusz do testu komunikacji obu kamer.",
+  "cameras": { "camera_1": null, "camera_2": null },
+  "camera_starts": {
+    "camera_1": "2026-01-01T12:00:00.000Z",
+    "camera_2": "2026-01-01T12:00:00.200Z"
+  },
+  "snapshots": []
+}
