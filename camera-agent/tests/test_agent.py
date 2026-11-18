@@ -1,6 +1,7 @@
 import time
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
+from unittest.mock import Mock
 
 from conftest import command
 
@@ -100,3 +101,31 @@ def test_start_live_uses_same_pipeline_and_failed_capture_goes_idle(config, tran
     agent.source.read = broken
     agent.tick()
     assert agent.mode == "idle"
+
+
+def test_preview_receives_frames_and_stop_clears_it(config, transport, demo):
+    _, scenarios = demo
+    preview = Mock()
+    agent = Agent(config, transport, scenarios, preview=preview)
+    try:
+        agent.start("replay", "synthetic-motion")
+        preview.set_state.assert_called_with("replay", "synthetic-motion")
+        agent.tick()
+        assert preview.update.call_count == 1
+        preview.update.side_effect = RuntimeError("JPEG failed")
+        agent.replay_started -= 10
+        agent.tick()
+        assert agent.mode == "replay"  # Preview errors do not stop the detection pipeline.
+    finally:
+        agent.stop()
+    preview.set_state.assert_called_with("idle")
+
+
+def test_failed_camera_command_is_visible_in_preview(config, transport, demo):
+    _, scenarios = demo
+    preview = Mock()
+    agent = Agent(config, transport, scenarios, preview=preview)
+    agent.handle_command(command("missing", scenario_id="not-installed"))
+    assert not transport.acks[-1]["accepted"]
+    preview.error.assert_called_once()
+    assert "scenario" in preview.error.call_args.args[0]

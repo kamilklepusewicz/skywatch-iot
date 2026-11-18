@@ -25,11 +25,11 @@ skywatch-agent = "skywatch_agent.main:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-skywatch_agent = ["schemas/*.json"]
+skywatch_agent = ["schemas/*.json", "preview.html", "preview.js"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-markers = ["integration: requires a local mosquitto executable and loopback sockets"]
+markers = ["integration: requires loopback sockets; MQTT tests also require local mosquitto"]
 
 [tool.ruff]
 line-length = 100

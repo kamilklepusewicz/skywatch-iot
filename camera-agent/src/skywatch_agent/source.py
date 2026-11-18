@@ -23,6 +23,12 @@ class VideoSource:
         self.capture = cv2.VideoCapture(str(recording.path) if recording else device)
         if not self.capture.isOpened():
             self.capture.release()
+            if recording is None:
+                raise ValueError(
+                    f"Cannot open camera {device}; check its index/path and permissions, "
+                    "and stop any other agent/application using the same camera. "
+                    "Use skywatch-agent list-cameras to find the USB device."
+                )
             raise ValueError(
                 "Cannot open recording/camera; check path, permissions and device index"
             )

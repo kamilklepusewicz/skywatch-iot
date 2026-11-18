@@ -13,9 +13,11 @@ class Pipeline:
         self.tracker = Tracker(tracker_config)
         self.interval = observation_interval
         self.last_sent = {}
+        self.visible_tracks = []
 
     def process(self, frame, mode, scenario_id=None):
         tracks = self.tracker.update(self.detector.detect(frame.image))
+        self.visible_tracks = tracks
         self.last_sent = {k: v for k, v in self.last_sent.items() if k in self.tracker.tracks}
         observations = []
         for track in tracks:

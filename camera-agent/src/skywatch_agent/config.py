@@ -80,8 +80,12 @@ class AgentConfig:
     def __post_init__(self):
         if not re.fullmatch(r"[A-Za-z0-9_-]+", self.camera_id):
             raise ValueError("camera_id may contain only letters, digits, underscore and hyphen")
-        if isinstance(self.live_device, str) and not self.live_device.startswith("/dev/video"):
-            raise ValueError("live_device must be a camera index or /dev/video device")
+        if isinstance(self.live_device, str) and not self.live_device.startswith(
+            ("/dev/video", "/dev/v4l/by-id/", "/dev/v4l/by-path/")
+        ):
+            raise ValueError(
+                "live_device must be a camera index or a /dev/video or /dev/v4l device"
+            )
         for name in (
             "heartbeat_seconds",
             "observation_interval",

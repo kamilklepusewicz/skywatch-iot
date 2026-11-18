@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { api } from './api';
+import { CameraPreview } from './CameraPreview';
 import { cameraName, commandLabel, timestamp } from './format';
 import type { Camera, CommandRequest, CommandResult, Scenario } from './types';
 
@@ -58,6 +59,7 @@ export function CameraCard({ camera, scenarios, brokerReady, refresh }: Props) {
           <span className="dot" />{camera.online ? 'Online' : 'Offline'}
         </span>
       </div>
+      <CameraPreview camera={camera} />
       <dl className="camera-facts">
         <div>
           <dt>{camera.online ? 'Tryb pracy' : 'Ostatni zgłoszony tryb'}</dt>
