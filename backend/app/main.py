@@ -20,7 +20,6 @@ from .models import (
     CommandRequest,
     CommandResult,
     Health,
-    MatchSummary,
     Mode,
     ObservationDetail,
     ObservationRow,
@@ -105,7 +104,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return [
             ObservationRow(
                 **item.model_dump(),
-                match=MatchSummary.model_validate(match(service.store, config, item).model_dump()),
+                match=match(service.store, config, item).summary(),
             )
             for item in service.store.observations(
                 limit, offset, mode, camera_id, scenario_id, before

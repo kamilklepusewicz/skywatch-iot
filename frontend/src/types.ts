@@ -64,11 +64,17 @@ export interface CommandResult {
 
 export type MatchStatus = 'skipped' | 'unavailable' | 'stale' | 'none' | 'one' | 'multiple';
 
+export interface AircraftIdentifier {
+  address: string;
+  callsign: string | null;
+}
+
 export interface MatchSummary {
   status: MatchStatus;
   reason: string;
   synthetic: boolean;
   candidate_count: number;
+  leading_candidate?: AircraftIdentifier | null;
 }
 
 export interface Observation {
@@ -85,9 +91,7 @@ export interface Observation {
   match: MatchSummary;
 }
 
-export interface Aircraft extends Coordinates {
-  address: string;
-  callsign: string | null;
+export interface Aircraft extends Coordinates, AircraftIdentifier {
   aircraft_type: string | null;
   altitude_baro_ft: number | null;
   altitude_geom_ft: number | null;

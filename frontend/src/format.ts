@@ -1,4 +1,4 @@
-import type { CommandResult, MatchStatus } from './types';
+import type { AircraftIdentifier, CommandResult, MatchStatus, MatchSummary } from './types';
 
 const dateTime = new Intl.DateTimeFormat('pl-PL', {
   dateStyle: 'short', timeStyle: 'medium', timeZone: 'UTC',
@@ -8,17 +8,37 @@ const decimal = new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 1 });
 export const timestamp = (value: string | null) => value ? dateTime.format(new Date(value)) : '—';
 export const metric = (value: number | null, unit: string) => value === null ? '—' : `${decimal.format(value)} ${unit}`;
 export const cameraName = (id: string) => /^camera_\d+$/.test(id) ? `Kamera ${id.slice(7)}` : id;
+export const aircraftIdentifier = (aircraft?: AircraftIdentifier | null) =>
+  aircraft?.callsign?.trim() || aircraft?.address?.trim() || null;
 
 export const objectLabel = { airplane: 'Samolot', bird: 'Ptak', unknown: 'Nieznany' };
 
 export const matchLabel: Record<MatchStatus, string> = {
   skipped: 'Pominięto',
-  unavailable: 'Brak danych',
-  stale: 'Dane poza oknem',
+  unavailable: 'Brak danych ADS-B',
+  stale: 'Dane poza oknem czasowym',
   none: 'Brak kandydatów',
-  one: '1 kandydat',
+  one: '1 kandydat ADS-B',
   multiple: 'Wielu kandydatów',
 };
+
+const shortMatchReason: Record<string, string> = {
+  scenario_not_registered: 'Brak scenariusza REPLAY',
+  camera_location_missing: 'Brak lokalizacji kamery',
+  no_snapshot_near_frame: 'Migawki poza oknem czasowym',
+  no_position_near_frame: 'Pozycje poza oknem czasowym',
+  positions_missing: 'Niepełne pozycje ADS-B',
+};
+
+export function matchSummaryLabel(match: MatchSummary) {
+  const identifier = aircraftIdentifier(match.leading_candidate);
+  if (match.status === 'one' && identifier) return `Kandydat ADS-B: ${identifier}`;
+  if (match.status === 'multiple') {
+    const count = match.candidate_count > 1 ? `${match.candidate_count} kandydatów` : matchLabel.multiple;
+    return identifier ? `${count} · pierwszy: ${identifier}` : count;
+  }
+  return shortMatchReason[match.reason] ?? matchLabel[match.status];
+}
 
 export const matchReason: Record<string, string> = {
   non_airplane: 'Dopasowanie ADS-B jest dostępne dla obserwacji samolotów.',

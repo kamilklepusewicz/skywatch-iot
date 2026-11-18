@@ -55,6 +55,8 @@ skywatch-agent run --config camera-agent/examples/camera_1.toml
 
 Na drugim urządzeniu użyj `camera_2.toml`, żeby każdy agent miał własne `camera_id`. Agent czeka w trybie `idle` na komendę z panelu.
 
+Jeśli obie kamery są podłączone do komputera z Docker Desktop, możesz oglądać oba podglądy w tym samym panelu. Zobacz [uruchomienie z podglądem na Windows](DOCKER.md#dwie-kamery-z-podglądem-na-jednym-komputerze-z-windows).
+
 ## LIVE, REPLAY i ADS-B
 
 - LIVE korzysta z fizycznej kamery. Backend pobiera bieżące pozycje z adsb.lol przy włączonym ADS-B i ustawionych `ADSB_LATITUDE` oraz `ADSB_LONGITUDE`. Do dopasowania potrzebuje też współrzędnych kamery w `CAMERA_LOCATIONS`. Format ustawień opisuje [instrukcja backendu](backend/DEVELOPMENT.md#konfiguracja).
