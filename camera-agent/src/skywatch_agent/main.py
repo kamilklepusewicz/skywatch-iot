@@ -103,7 +103,7 @@ def main(argv=None):
             print(generate_demo(args.directory))
             return 0
         config = load_config(args.config)
-        scenarios = load_scenarios(config.scenario_files)
+        scenarios = load_scenarios(config.scenario_files, camera_id=config.camera_id)
         if args.action == "evaluate":
             return evaluate(config, scenarios, args.scenario, args.output, args.expect)
         if args.mode == "replay" and not args.scenario:

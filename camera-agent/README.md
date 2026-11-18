@@ -121,7 +121,8 @@ Skopiuj `examples/scenario.example.json` do własnego katalogu i uzupełnij:
 
 Ścieżki w TOML są względem TOML; ścieżki scenariusza są względem jego JSON.
 Dodaj scenariusz do `scenario_files`. Drugi laptop może mieć inne ścieżki,
-ale musi zachować ID i czasy. Brak filmu drugiej kamery nie blokuje pierwszej.
+ale musi zachować ID i czasy. Agent wczytuje dane nagrania i ewentualny plik
+czasów tylko dla własnego `camera_id`; pliki drugiej kamery nie muszą być dostępne.
 
 `captured_at = captured_start + czas klatki w nagraniu`. Agent używa pozycji
 czasowej OpenCV; przy braku rosnących PTS stosuje FPS (dla materiału CFR).
@@ -129,6 +130,7 @@ Dla VFR/dokładnej korekty dodaj w wpisie kamery
 `"frame_offsets": "camera_1.timestamps.json"`. Ten plik zawiera tablicę
 oryginalnych czasów klatek w sekundach, np. `[0.0, 0.041, 0.090]`:
 początek 0, kolejne czasy ściśle rosnące, jeden wpis na każdą klatkę.
+Przy takim pliku metadane FPS nagrania nie są wymagane.
 
 ```bash
 skywatch-agent run --config camera-agent/examples/camera_1.toml \

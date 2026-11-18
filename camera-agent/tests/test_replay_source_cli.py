@@ -117,3 +117,68 @@ def test_offline_evaluation_is_honest_about_synthetic_data(
 
 def test_cli_bad_configuration_returns_nonzero(tmp_path):
     assert main(["run", "--config", str(tmp_path / "missing.toml")]) == 2
+
+
+def test_evaluation_does_not_require_other_cameras_timestamp_files(demo, tmp_path):
+    directory, _ = demo
+    path = directory / "synthetic-motion.json"
+    data = json.loads(path.read_text())
+    data["cameras"]["camera_2"]["frame_offsets"] = "only-on-second-laptop.json"
+    path.write_text(json.dumps(data))
+    assert (
+        main(
+            [
+                "evaluate",
+                "--config",
+                str(directory / "camera_1.toml"),
+                "--scenario",
+                "synthetic-motion",
+                "--output",
+                str(tmp_path / "report.json"),
+                "--expect",
+                "any",
+            ]
+        )
+        == 0
+    )
+    # The owning camera must still report a missing timestamps file as an error.
+    assert (
+        main(
+            [
+                "evaluate",
+                "--config",
+                str(directory / "camera_2.toml"),
+                "--scenario",
+                "synthetic-motion",
+                "--output",
+                str(tmp_path / "second.json"),
+            ]
+        )
+        == 2
+    )
+
+
+@pytest.mark.parametrize("fps", [0, float("nan")])
+def test_original_timestamps_do_not_require_fps_metadata(demo, monkeypatch, fps):
+    _, scenarios = demo
+    recording = scenarios["synthetic-motion"].recordings["camera_1"]
+    recording = replace(recording, frame_offsets=(0, 0.041, 0.090))
+    results = iter([(True, np.zeros((10, 10, 3))) for _ in range(3)] + [(False, None)])
+    fake = SimpleNamespace(
+        isOpened=lambda: True,
+        release=lambda: None,
+        get=lambda _: fps,
+        read=lambda: next(results),
+    )
+    monkeypatch.setattr(cv2, "VideoCapture", lambda _: fake)
+    source = VideoSource(recording=recording)
+    try:
+        frames = [source.read() for _ in range(3)]
+        assert [frame.offset for frame in frames] == [0, 0.041, 0.090]
+        assert (frames[2].captured_at - frames[0].captured_at).total_seconds() == 0.090
+        assert source.read() is None
+    finally:
+        source.close()
+    # Without the original timestamps FPS is still needed for a fallback clock.
+    with pytest.raises(ValueError, match="FPS"):
+        VideoSource(recording=replace(recording, frame_offsets=None))
