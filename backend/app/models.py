@@ -130,15 +130,35 @@ class Candidate(BaseModel):
     snapshot_at: AwareDatetime
 
 
-class MatchSummary(BaseModel):
+class AircraftIdentifier(BaseModel):
+    address: str
+    callsign: str | None = None
+
+
+class MatchState(BaseModel):
     status: MatchStatus
     synthetic: bool = False
     reason: str
     candidate_count: int = 0
 
 
-class Match(MatchSummary):
+class MatchSummary(MatchState):
+    leading_candidate: AircraftIdentifier | None = None
+
+
+class Match(MatchState):
     candidates: list[Candidate] = Field(default_factory=list)
+
+    def summary(self) -> MatchSummary:
+        aircraft = self.candidates[0].aircraft if self.candidates else None
+        return MatchSummary(
+            **self.model_dump(exclude={"candidates"}),
+            leading_candidate=(
+                AircraftIdentifier(address=aircraft.address, callsign=aircraft.callsign)
+                if aircraft is not None
+                else None
+            ),
+        )
 
 
 class ObservationRow(StoredObservation):

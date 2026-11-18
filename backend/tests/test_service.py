@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from app.config import Settings
 from app.database import Store
 from app.main import create_app
-from app.models import CommandRequest
+from app.models import Aircraft, CommandRequest, Snapshot
 from app.mqtt import Broker, Message
 from app.service import Service
 
@@ -72,6 +72,73 @@ def test_observations_and_restart(tmp_path):
         assert client.get("/api/health").json()["mqtt_connected"] is False
     with TestClient(create_app(settings)) as client:
         assert client.get("/api/observations/one").json() == saved
+
+
+def test_history_returns_only_the_first_ranked_aircraft(tmp_path):
+    settings = Settings(
+        database_path=tmp_path / "history.sqlite3",
+        mqtt_enabled=False,
+        adsb_enabled=False,
+        camera_locations={"camera_1": {"latitude": 52, "longitude": 21}},
+    )
+    with TestClient(create_app(settings)) as client:
+        service = client.app.state.service
+        first = Aircraft(
+            address="abc123",
+            callsign="RYR1234",
+            latitude=52.02,
+            longitude=21,
+            position_at=NOW,
+            position_age_seconds=0,
+        )
+        second = Aircraft(
+            address="def456",
+            latitude=52,
+            longitude=21,
+            position_at=NOW - timedelta(seconds=1),
+            position_age_seconds=1,
+        )
+        snapshot = Snapshot(source_at=NOW, retrieved_at=NOW, aircraft=[second, first])
+        client.portal.call(service.store.save_snapshot, snapshot)
+        for camera_id in ("camera_1", "camera_2"):
+            item = sample(
+                "observation",
+                observation_id=camera_id,
+                camera_id=camera_id,
+                captured_at=NOW.isoformat(),
+                mode="live",
+                scenario_id=None,
+            )
+            client.portal.call(deliver, service, "observations", item)
+
+        rows = {row["camera_id"]: row["match"] for row in client.get("/api/observations").json()}
+        assert rows["camera_1"] == {
+            "status": "multiple",
+            "synthetic": False,
+            "reason": "temporal_geographic",
+            "candidate_count": 2,
+            "leading_candidate": {"address": "abc123", "callsign": "RYR1234"},
+        }
+        assert rows["camera_2"] == {
+            "status": "unavailable",
+            "synthetic": False,
+            "reason": "camera_location_missing",
+            "candidate_count": 0,
+            "leading_candidate": None,
+        }
+        detail = client.get("/api/observations/camera_1").json()["match"]
+        assert "leading_candidate" not in detail
+        assert [candidate["aircraft"]["address"] for candidate in detail["candidates"]] == [
+            "abc123",
+            "def456",
+        ]
+
+        client.portal.call(
+            service.store.save_snapshot, snapshot.model_copy(update={"aircraft": [second]})
+        )
+        (row,) = client.get("/api/observations?camera_id=camera_1").json()
+        assert row["match"]["status"] == "one"
+        assert row["match"]["leading_candidate"] == {"address": "def456", "callsign": None}
 
 
 def test_retained_heartbeat_and_lwt(tmp_path):
@@ -338,8 +405,6 @@ def test_periodic_writes_recover_from_external_lock(tmp_path, monkeypatch, caplo
 
 
 def test_time_diagnostics_preserve_source_and_position_timestamps(tmp_path):
-    from app.models import Snapshot
-
     settings = Settings(
         database_path=tmp_path / "timing.sqlite3",
         mqtt_enabled=False,

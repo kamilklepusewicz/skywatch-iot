@@ -1,9 +1,11 @@
-import { cameraName, matchLabel, matchReason, metric, objectLabel, timestamp } from './format';
+import {
+  aircraftIdentifier, cameraName, matchLabel, matchReason, matchSummaryLabel, metric, objectLabel, timestamp,
+} from './format';
 import type { MatchSummary, Observation, ObservationDetail } from './types';
 
 export function MatchBadge({ match }: { match: MatchSummary }) {
-  return <span className={`badge match-${match.status}`}>
-    {match.status === 'multiple' ? `${match.candidate_count} kandydatów` : matchLabel[match.status]}
+  return <span className={`badge match-${match.status} match-summary`}>
+    {matchSummaryLabel(match)}
   </span>;
 }
 
@@ -81,11 +83,13 @@ export function ObservationDetails({ observation, error, close }: {
     </dl>
     <h3>Potencjalne dopasowania</h3>
     <p>{matchReason[match.reason] ?? matchLabel[match.status]}</p>
-    {!!match.candidates.length && <p className="muted-text">Potwierdzenie tożsamości wymaga danych o polu widzenia kamery.</p>}
+    {!!match.candidates.length && <p className="muted-text">
+      Kandydaci spełniają kryteria czasu i odległości od kamery. Tożsamość wymaga niezależnego potwierdzenia.
+    </p>}
     <div className="candidate-list">
       {match.candidates.map(({ aircraft, distance_km, time_delta_seconds, snapshot_at }) => (
         <article className="candidate" key={aircraft.address}>
-          <h4>{aircraft.callsign ?? aircraft.address}</h4>
+          <h4>{aircraftIdentifier(aircraft) ?? 'Brak identyfikatora'}</h4>
           <p>{aircraft.address}{aircraft.aircraft_type && ` · ${aircraft.aircraft_type}`}</p>
           <dl className="detail-facts">
             <div><dt>Pozycja (UTC)</dt><dd>{timestamp(aircraft.position_at)}</dd></div>

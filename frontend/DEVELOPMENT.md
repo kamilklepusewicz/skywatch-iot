@@ -30,25 +30,11 @@ zmienić przez `SKYWATCH_PREVIEW_CAMERA_1_URL` i
 nasłuchuje tylko na loopback; przy pracy na innym komputerze można udostępnić
 go serwerowi panelu przez tunel SSH. Obraz nie przechodzi przez MQTT.
 
-Po zbudowaniu frontend wymaga serwera statycznego z proxy `/api`, `/ws`
-oraz `/preview/camera_1/` i `/preview/camera_2/`. Proxy podglądu musi usuwać
-prefiks `/preview/camera_N` i wyłączyć buforowanie strumienia MJPEG.
-Konfiguracja Docker/Nginx nie ma domyślnie połączenia z kamerami hosta;
-bez skonfigurowania tych tras panel pokaże „Podgląd niedostępny”. Przykład
-trasy dla Nginx uruchomionego bezpośrednio na tym samym komputerze co agent:
+Panel w Docker Compose obsługuje te same ścieżki przez Nginx. Instrukcję
+uruchomienia i sprawdzenia podglądu obu kamer na Windows zawiera
+[instrukcja Docker Compose](../DOCKER.md#dwie-kamery-z-podglądem-na-jednym-komputerze-z-windows).
 
-```nginx
-location /preview/camera_1/ {
-    proxy_pass http://127.0.0.1:8765/;
-    proxy_buffering off;
-    proxy_cache off;
-    proxy_read_timeout 60s;
-}
-```
-
-Analogiczna trasa dla `camera_2` wskazuje port 8766. Serwer panelu udostępnia
-obraz swoim użytkownikom; lokalne uruchomienie Vite nadal nasłuchuje wyłącznie
-na `127.0.0.1`.
+## Historia i mapa
 
 Panel wyświetla czas w UTC. Po otwarciu obserwacji mapa pokazuje pozycje jej
 kandydatów. Zaznaczenie punktu pokazuje czas pozycji i jego snapshotu.
