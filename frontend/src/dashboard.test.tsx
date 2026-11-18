@@ -59,6 +59,9 @@ beforeEach(() => {
     const url = new URL(String(input), 'http://localhost');
     if (apiFailure) return Response.json({}, { status: 503 });
     switch (url.pathname) {
+      case '/preview/camera_1/status.json':
+      case '/preview/camera_2/status.json':
+        return Response.json({}, { status: 503 });
       case '/api/cameras':
         return Response.json(cameras);
       case '/api/health':

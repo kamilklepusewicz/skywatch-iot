@@ -97,6 +97,56 @@ Domyślnie agent jest w `idle` i czeka na komendę. `live_device = 0` oznacza pi
 kamerę; można użyć innego indeksu lub `/dev/videoN`. Zamknij programy zajmujące kamerę.
 Ten sam `camera_id` w dwóch procesach powoduje konflikt identyfikatora MQTT.
 
+### Kamera USB i podgląd obrazu
+
+Główny panel pokazuje obraz w kartach kamer, jeżeli agenty uruchomiono z
+`--preview-port` i skonfigurowano proxy według [instrukcji panelu](../frontend/DEVELOPMENT.md#podgląd-kamer-w-panelu).
+`Online` oznacza połączenie agenta z brokerem; dopiero `LIVE` oznacza otwarte
+źródło kamery. Detekcje pojawiają się, gdy detektor znajdzie obiekt. Konfiguracje
+`examples/camera_1.toml` i `examples/camera_2.toml` używają YOLO do rozpoznawania
+samolotów i ptaków; wymagają przygotowanego wyżej modelu ONNX. Konfiguracje
+wygenerowane w `local/demo/` używają detektora ruchu `motion`, który zgłasza
+wyłącznie `unknown`. Samo uruchomienie podglądu nie zmienia detektora.
+
+Znajdź urządzenie na Linuxie bez otwierania kamery:
+
+```bash
+skywatch-agent list-cameras
+```
+
+Kamera USB nie musi mieć indeksu 0. Przykładowo kamera laptopa może być pod
+`/dev/video0`, a webcam USB pod `/dev/video2`. Wpis `video-index1` często służy
+metadanym; wybierz urządzenie z `video-index0`. Dwa procesy nie mogą jednocześnie
+zajmować tej samej kamery.
+
+```bash
+# Kamera USB nr 2, od razu LIVE i lokalny podgląd:
+skywatch-agent run --config camera-agent/examples/camera_1.toml \
+  --camera 2 --mode live --preview-port 8765
+```
+
+Otwórz główny panel: obraz pojawi się w karcie Kamery 1. Możesz również otworzyć
+[samodzielny podgląd kamery 1](http://127.0.0.1:8765). Dla drugiego agenta wybierz
+inne urządzenie i `--preview-port 8766`, np.:
+
+```bash
+skywatch-agent run --config camera-agent/examples/camera_2.toml \
+  --camera 0 --mode live --preview-port 8766
+```
+
+Pod obrazem w panelu sprawdź etykietę **YOLO · samoloty i ptaki**.
+Opcja `--camera` nadpisuje `live_device` z TOML. Możesz też podać stałą ścieżkę `/dev/v4l/by-id/...-video-index0`, aby
+wybór kamery nie zależał od kolejności podłączania USB. Na Windows/macOS używaj
+indeksów liczbowych; komenda listująca urządzenia jest przeznaczona dla Linuxa.
+
+Podgląd działa dla LIVE i REPLAY, pokazuje obraz, ramki śledzonych obiektów,
+czas klatki, rozdzielczość i błędy źródła. Po `stop` usuwa ostatni obraz.
+Serwer agenta jest opcjonalny i nasłuchuje wyłącznie na loopback; domyślnie
+pozostaje wyłączony. Proxy panelu udostępnia ten obraz użytkownikom panelu.
+Maksymalnie 10 klatek/s i szerokość 960 px
+ograniczają koszt podglądu, nie rozdzielczość detekcji. Klatki nie są zapisywane
+na dysku ani przesyłane przez MQTT. Nie wymaga OpenCV z GUI.
+
 Demo z brokerem, bez modelu (dwa terminale):
 
 ```bash
@@ -121,7 +171,8 @@ Skopiuj `examples/scenario.example.json` do własnego katalogu i uzupełnij:
 
 Ścieżki w TOML są względem TOML; ścieżki scenariusza są względem jego JSON.
 Dodaj scenariusz do `scenario_files`. Drugi laptop może mieć inne ścieżki,
-ale musi zachować ID i czasy. Brak filmu drugiej kamery nie blokuje pierwszej.
+ale musi zachować ID i czasy. Agent wczytuje dane nagrania i ewentualny plik
+czasów tylko dla własnego `camera_id`; pliki drugiej kamery nie muszą być dostępne.
 
 `captured_at = captured_start + czas klatki w nagraniu`. Agent używa pozycji
 czasowej OpenCV; przy braku rosnących PTS stosuje FPS (dla materiału CFR).
@@ -129,6 +180,7 @@ Dla VFR/dokładnej korekty dodaj w wpisie kamery
 `"frame_offsets": "camera_1.timestamps.json"`. Ten plik zawiera tablicę
 oryginalnych czasów klatek w sekundach, np. `[0.0, 0.041, 0.090]`:
 początek 0, kolejne czasy ściśle rosnące, jeden wpis na każdą klatkę.
+Przy takim pliku metadane FPS nagrania nie są wymagane.
 
 ```bash
 skywatch-agent run --config camera-agent/examples/camera_1.toml \
@@ -201,7 +253,7 @@ ruff check camera-agent
 ruff format --check camera-agent
 ```
 
-Trzy testy integracyjne uruchamiają prywatny Mosquitto na losowym porcie localhost,
+Trzy testy integracyjne MQTT uruchamiają prywatny Mosquitto na losowym porcie localhost,
 z tymczasowym hasłem, oraz dwa procesy agenta. Wymagają `mosquitto` i
 `mosquitto_passwd` w PATH (albo `MOSQUITTO_BIN` / `MOSQUITTO_PASSWD_BIN`).
 Bez nich pytest jawnie je pomija. Testowy broker nie zmienia infrastruktury projektu.
@@ -209,6 +261,8 @@ Sprawdzane są restart brokera, ponowna subskrypcja, odrzucenie złego hasła,
 QoS 1, duplikaty komend, stop, retained LWT i niezależność agentów.
 Osobny test wczytuje lokalny model YOLO i wykonuje inferencję; jest pomijany,
 jeżeli nie przygotowano wag. Test ten nie mierzy skuteczności na prawdziwym niebie.
+Testy podglądu korzystają z lokalnego HTTP i sztucznych klatek: sprawdzają ramki,
+strumień MJPEG, usunięcie obrazu po zatrzymaniu oraz zamknięcie połączeń.
 
 - YOLO może pomijać małe/odległe samoloty, szczególnie na tle chmur lub przy rozmyciu.
   Próg confidence i rozdzielczość trzeba ocenić na rzeczywistych danych.

@@ -22,7 +22,8 @@ class Scenario:
     synthetic: bool
 
 
-def load_scenarios(paths: tuple[Path, ...]) -> dict[str, Scenario]:
+def load_scenarios(paths: tuple[Path, ...], *, camera_id: str | None = None) -> dict[str, Scenario]:
+    """Load local camera metadata without requiring files stored on another laptop."""
     result = {}
     for path in paths:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -30,7 +31,9 @@ def load_scenarios(paths: tuple[Path, ...]) -> dict[str, Scenario]:
         if not isinstance(scenario_id, str) or not scenario_id.strip() or scenario_id in result:
             raise ValueError(f"Empty or duplicated scenario_id in {path}")
         recordings = {}
-        for camera_id, item in data["cameras"].items():
+        for recording_id, item in data["cameras"].items():
+            if camera_id is not None and recording_id != camera_id:
+                continue
             offsets = None
             if item.get("frame_offsets"):
                 offsets = tuple(json.loads((path.parent / item["frame_offsets"]).read_text()))
@@ -40,13 +43,13 @@ def load_scenarios(paths: tuple[Path, ...]) -> dict[str, Scenario]:
                     or any(not math.isfinite(x) or x < 0 for x in offsets)
                     or any(a >= b for a, b in zip(offsets, offsets[1:]))
                 ):
-                    raise ValueError(f"Invalid frame offsets for {camera_id}")
-            recordings[camera_id] = Recording(
+                    raise ValueError(f"Invalid frame offsets for {recording_id}")
+            recordings[recording_id] = Recording(
                 (path.parent / item["video"]).resolve(),
                 parse_time(item["captured_start"]),
                 offsets,
             )
-        if not recordings:
+        if not data["cameras"]:
             raise ValueError(f"No cameras in scenario {scenario_id}")
         result[scenario_id] = Scenario(scenario_id, recordings, bool(data.get("synthetic", False)))
     return result

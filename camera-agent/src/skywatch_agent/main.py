@@ -3,15 +3,18 @@ import json
 import logging
 import signal
 from collections import Counter
+from dataclasses import replace
 from pathlib import Path
 
 from .agent import Agent
+from .cameras import camera_device, list_cameras
 from .config import load_config
 from .contracts import timestamp
 from .demo import generate_demo
 from .detector import make_detector
 from .mqtt_client import MqttClient
 from .pipeline import Pipeline
+from .preview import PreviewServer
 from .replay import load_scenarios
 from .source import VideoSource
 
@@ -86,6 +89,9 @@ def main(argv=None):
     run.add_argument("--config", type=Path, required=True)
     run.add_argument("--mode", choices=("idle", "live", "replay"), default="idle")
     run.add_argument("--scenario")
+    run.add_argument("--camera", type=camera_device, help="Override LIVE device index or /dev path")
+    run.add_argument("--preview-port", type=int, help="Serve local image preview on this port")
+    commands.add_parser("list-cameras", help="List Linux camera devices without opening them")
     evaluation = commands.add_parser("evaluate", help="Evaluate a local recording without MQTT")
     evaluation.add_argument("--config", type=Path, required=True)
     evaluation.add_argument("--scenario", required=True)
@@ -102,16 +108,39 @@ def main(argv=None):
         if args.action == "generate-demo":
             print(generate_demo(args.directory))
             return 0
+        if args.action == "list-cameras":
+            cameras = list_cameras()
+            for camera in cameras:
+                print(f"{camera['index']}: {camera['name']} ({camera['device']})")
+                for path in camera["stable_paths"]:
+                    print(f"  {path}")
+            if not cameras:
+                print("No Linux video devices found. On Windows/macOS use --camera 0, 1, ...")
+            return 0
         config = load_config(args.config)
-        scenarios = load_scenarios(config.scenario_files)
+        if args.action == "run" and args.camera is not None:
+            config = replace(config, live_device=args.camera)
+        scenarios = load_scenarios(config.scenario_files, camera_id=config.camera_id)
         if args.action == "evaluate":
             return evaluate(config, scenarios, args.scenario, args.output, args.expect)
         if args.mode == "replay" and not args.scenario:
             raise ValueError("--mode replay requires --scenario")
-        agent = Agent(config, MqttClient(config.camera_id, config.mqtt), scenarios)
+        transport = MqttClient(config.camera_id, config.mqtt)
+        preview = None
+        if args.preview_port is not None:
+            preview = PreviewServer(
+                config.camera_id, config.live_device, config.detector.kind, args.preview_port
+            )
+        agent = Agent(config, transport, scenarios, preview=preview)
         for signum in (signal.SIGINT, signal.SIGTERM):
             signal.signal(signum, lambda *_: agent.shutdown.set())
-        agent.run(args.mode, args.scenario)
+        try:
+            if preview:
+                preview.start()
+            agent.run(args.mode, args.scenario)
+        finally:
+            if preview:
+                preview.close()
         return 0
     except Exception as exc:
         LOG.error("%s: %s", type(exc).__name__, exc, exc_info=args.verbose)

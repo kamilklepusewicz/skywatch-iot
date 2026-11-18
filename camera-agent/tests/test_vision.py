@@ -107,6 +107,7 @@ def test_pipeline_throttles_by_capture_time_and_preserves_identity(mode):
 
     first = pipeline.process(frame(0), mode, scenario)[0]
     assert pipeline.process(frame(0.1), mode, scenario) == []
+    assert len(pipeline.visible_tracks) == 1  # Preview boxes remain between MQTT publications.
     second = pipeline.process(frame(0.5), mode, scenario)[0]
     assert first["track_id"] == second["track_id"]
     assert first["observation_id"] != second["observation_id"]

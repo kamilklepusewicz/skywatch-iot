@@ -23,11 +23,21 @@ class VideoSource:
         self.capture = cv2.VideoCapture(str(recording.path) if recording else device)
         if not self.capture.isOpened():
             self.capture.release()
+            if recording is None:
+                raise ValueError(
+                    f"Cannot open camera {device}; check its index/path and permissions, "
+                    "and stop any other agent/application using the same camera. "
+                    "Use skywatch-agent list-cameras to find the USB device."
+                )
             raise ValueError(
                 "Cannot open recording/camera; check path, permissions and device index"
             )
         self.fps = float(self.capture.get(cv2.CAP_PROP_FPS))
-        if recording and (not math.isfinite(self.fps) or self.fps <= 0):
+        if (
+            recording
+            and recording.frame_offsets is None
+            and (not math.isfinite(self.fps) or self.fps <= 0)
+        ):
             self.capture.release()
             raise ValueError("Recording has no usable FPS")
         if not recording:

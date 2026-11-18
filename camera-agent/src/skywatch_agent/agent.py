@@ -22,12 +22,14 @@ class Agent:
         *,
         source_factory=VideoSource,
         detector_factory=make_detector,
+        preview=None,
     ):
         self.config = config
         self.transport = transport
         self.scenarios = scenarios
         self.source_factory = source_factory
         self.detector_factory = detector_factory
+        self.preview = preview
         self.mode = "idle"
         self.scenario_id = None
         self.source = None
@@ -43,6 +45,8 @@ class Agent:
         self.source = self.pipeline = self.pending_frame = None
         self.mode, self.scenario_id = "idle", None
         self.transport.report_status(self.mode)
+        if self.preview:
+            self.preview.set_state(self.mode)
 
     def start(self, mode, scenario_id=None):
         if mode == "live" and self.mode == "live":
@@ -81,6 +85,8 @@ class Agent:
         self.pending_frame = first
         self.replay_started = time.monotonic()
         self.transport.report_status(self.mode, self.scenario_id)
+        if self.preview:
+            self.preview.set_state(self.mode, self.scenario_id)
 
     def handle_command(self, command):
         validate("command", command)
@@ -108,6 +114,8 @@ class Agent:
             except Exception as exc:
                 LOG.exception("Command failed: %s", command_id)
                 accepted, message = False, f"{type(exc).__name__}: {exc}"
+                if self.preview:
+                    self.preview.error(message)
         ack = validate(
             "ack",
             {
@@ -157,10 +165,17 @@ class Agent:
                         "Observation dropped: MQTT queue is full (%s)",
                         observation["observation_id"],
                     )
+            if self.preview:
+                try:
+                    self.preview.update(frame, self.pipeline.visible_tracks)
+                except Exception:
+                    LOG.exception("Preview frame failed; capture continues")
             self.pending_frame = None
-        except Exception:
+        except Exception as exc:
             LOG.exception("Capture/detection failed; returning to idle")
             self.stop()
+            if self.preview:
+                self.preview.error(str(exc))
 
     def run(self, initial_mode="idle", scenario_id=None):
         self.transport.start()
